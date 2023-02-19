@@ -10,6 +10,9 @@
 
 
 uint16_t loop_count = 0;
+double pitch = 90;
+double diff_x = 0;
+double diff_y = 0;
 
 void setup()
 {
@@ -18,33 +21,72 @@ void setup()
 	// デバック用シリアル通信は9600bps
 	Serial.begin(9600);
 
-	SD_Init();			// これは絶対最初に初期化！
-	CAM2_Init();		// SDの後！
-	BTH_Init();
+	//SD_Init();			// これは絶対最初に初期化！
+	//CAM2_Init();		// SDの後！
+	//BTH_Init();
 	DCM_Init();
 	IMU_Init();
-	LIT_Init();
+	//LIT_Init();
 	SRV_Init();
-	GPS_Init();
-	XBEE_Init();
+	//GPS_Init();
+	//XBEE_Init();
 
 	Serial.println(F("Init done"));
-	delay(300);
+  SRV_SetPosition(100);
+  SRV_Run();
+	delay(3000);
+  IMU_UpdateAll();
+  IMU_Calibration();
 }
 
 void loop()
 {
 	IMU_UpdateAll();
-	IMU_PrintAcc();
-	IMU_PrintGyr();
-	IMU_PrintMag();
-	GPS_Update();
-	GPS_Print();
-	LIT_Print();
-	BTH_Update();
-	BTH_Print();
-	XBEE_Test();
+	//IMU_PrintAcc();
+	//IMU_PrintGyr();
+	//IMU_PrintMag();
+	//GPS_Update();
+	//GPS_Print();
+	//LIT_Print();
+	//BTH_Update();
+	//BTH_Print();
+	//XBEE_Test();
 
+
+  double x = IMU_CalMagX();
+  double y = IMU_CalMagY();
+
+  // double pitch = asin((y + 500) / 600) / 3.14159 * 180;
+  // pitch = pitch + 360;
+  // if(x < -500){
+  //   pitch = 540 - pitch;
+  // }
+  // while(pitch >= 360){
+  //   pitch -= 360;
+  // }
+
+  if (y < -15) {
+    int d = 1;
+    if (y < -150) {
+      d = 2;
+    }
+    pitch += d;
+  } else if (y > 15) {
+    int d = 1;
+    if (y > 150) {
+      d = 2;
+    }
+    pitch -= d;
+  }
+  // Serial.println(pitch);
+  // Serial.println("");
+
+  if(pitch > 180)pitch = 180;
+  if(pitch < 1)pitch = 1;
+  SRV_SetPosition(180 - pitch);
+  SRV_Run();
+
+/*
 	if (loop_count % 10 == 3) {
 		CAM2_TakePic();
 	}
@@ -73,7 +115,37 @@ void loop()
 	}
 
 	// DCは一旦含んでいない（基本的に使わないと考えているため）
-
+*/
 	loop_count++;
-	delay(1000);
+  // if (1) {
+  //   Serial.print("X : ");
+  //   Serial.println(IMU_GetMagX());
+  //   Serial.print("Y : ");
+  //   Serial.println(IMU_GetMagY());
+  //   Serial.print("Z : ");
+  //   Serial.println(IMU_GetMagZ());
+  // }
+}
+
+void IMU_Calibration() {
+  for (int i=0; i<3; i++) {
+    SRV_SetPosition(4+i*86);
+    SRV_Run();
+    delay(1000);
+    for (int j=0; j<10; j++) {
+      diff_x += IMU_GetMagX();
+      diff_y += IMU_GetMagY();
+      delay(10);
+    }
+  };
+  diff_x /= 20;
+  diff_y /= 20;
+}
+
+double IMU_CalMagX() {
+  return IMU_GetMagX() - diff_x;
+}
+
+double IMU_CalMagY() {
+  return IMU_GetMagY() - diff_y;
 }

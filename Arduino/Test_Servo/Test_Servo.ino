@@ -17,7 +17,7 @@ void loop()
 	Serial.println(loop_count);
 	if (loop_count % 10 == 0) {
 		Serial.println(F("Move Up!"));
-		for(uint8_t pos = 0; pos <= 180; pos = pos + 30) {
+		for(int pos = 2; pos <= 180; pos = pos * 2 % 200) {
 			Serial.print(F("pos:"));
 			Serial.println(pos);
 			SRV_SetPosition(pos);

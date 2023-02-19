@@ -20,5 +20,13 @@ void loop()
 	BTH_Update();		// センサの値をアップデート
 	BTH_Print();		// アップデートした値を表示
 
+  if(BTH_GetHumidity() > 90){
+    Serial.println("Arduinoは防水ではありません!!");
+  }
+
+  if(BTH_GetTemperature() > 25){
+    Serial.println("[???]That's illegal!");
+  }
+
 	delay(1000);		// 1000 ms 待つ
 }
